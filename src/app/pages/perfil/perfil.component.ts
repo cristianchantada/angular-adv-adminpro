@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
   styles: [],
 })
 export class PerfilComponent implements OnInit {
+  
   public perfilForm: FormGroup;
   public usuario: Usuario;
   public imagenSubir: File;

@@ -16,6 +16,8 @@ export class Usuario {
 
   get imagenUrl(){
 
+    if(!this.img) return `${base_url}/uploads/usuarios/no-img`;
+
     if(this.google) return this.img;
 
     if(this.img){
