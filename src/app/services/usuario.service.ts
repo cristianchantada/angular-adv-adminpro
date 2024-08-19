@@ -1,13 +1,13 @@
-import { RegisterForm } from '../interfaces/register-form.interface';
-import { LoginInterface } from '../interfaces/login-form.interface';
-import { environment } from 'src/environments/environment';
-import { catchError, delay, map, tap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { Usuario } from '../models/usuario.model';
+import { catchError, map, tap } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 import { CargarUsuario } from '../interfaces/cargar-usuarios.interface';
+import { LoginInterface } from '../interfaces/login-form.interface';
+import { RegisterForm } from '../interfaces/register-form.interface';
+import { Usuario } from '../models/usuario.model';
 declare const google: any;
 
 const base_url = environment.base_url;
@@ -16,6 +16,7 @@ const base_url = environment.base_url;
   providedIn: 'root',
 })
 export class UsuarioService {
+
   public usuario: Usuario;
 
   constructor(
@@ -40,8 +41,13 @@ export class UsuarioService {
     }
   }
 
+  get role(): 'ADMIN_ROLE' | 'USER_ROLE' {
+    return this.usuario.role;
+  }
+
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('menu');
 
     google.accounts.id.revoke(this.usuario.email, () => {
       this.ngZone.run(() => {
@@ -57,15 +63,20 @@ export class UsuarioService {
         map((resp: any) => {
           const { nombre, email, password, role, google, img, uid } = resp.usuario;
           this.usuario = new Usuario(nombre, email, '', img, google, role, uid);
-          localStorage.setItem('token', resp.token);
+          this.guardarLocalStorage(resp.token, resp.menu);
+
           return true
         }),
         catchError((err) => of(false))
       );
-  }
+    }
 
   crearUsuario(formData: RegisterForm) {
-    return this.http.post(`${base_url}/usuarios`, formData);
+      return this.http.post(`${base_url}/usuarios`, formData).pipe(
+        tap( (resp: any) => {
+          this.guardarLocalStorage(resp.token, resp.menu);
+      })
+    );
   }
 
   actualizarPerfil(data: {email: string, nombre: string, role: string}){
@@ -82,7 +93,7 @@ export class UsuarioService {
   login(formData: LoginInterface) {
     return this.http.post(`${base_url}/login`, formData).pipe(
       tap((resp: any) => {
-        localStorage.setItem('token', resp.token);
+        this.guardarLocalStorage(resp.token, resp.menu);
       })
     );
   }
@@ -90,9 +101,7 @@ export class UsuarioService {
   logingGoogle(token: string) {
     return this.http.post(`${base_url}/login/google`, { token }).pipe(
       tap((resp: any) => {
-        console.log(resp);
-
-        localStorage.setItem('token', resp.token);
+        this.guardarLocalStorage(resp.token, resp.menu);
       })
     );
   }
@@ -123,6 +132,11 @@ export class UsuarioService {
 
   guardarUsuario(usuario: Usuario){
     return this.http.put(`${base_url}/usuarios/${usuario.uid}`, usuario, this.headers);
+  }
+
+  guardarLocalStorage(token: string, menu: any){
+    localStorage.setItem('token', token);
+    localStorage.setItem('menu', JSON.stringify(menu));
   }
 
 

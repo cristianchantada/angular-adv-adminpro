@@ -65,4 +65,9 @@ export class BusquedasService {
       )
   }
 
+  busquedaGlobal(termino: string){
+    const url = `${base_url}/todo/${termino}`;
+    return this.http.get(url, this.headers);
+  }
+
 }
